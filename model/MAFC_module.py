@@ -56,3 +56,98 @@ class BAM(nn.Module):
     def forward(self,in_tensor):
         att = 1 + torch.sigmoid( self.channel_att(in_tensor) * self.spatial_att(in_tensor) )
         return att * in_tensor
+import torch
+import torch.nn as nn
+
+class SE(nn.Module):
+    def __init__(self, channels, reduction=16):
+        super(SE, self).__init__()
+
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+
+        self.fc = nn.Sequential(
+            nn.Linear(channels, channels // reduction, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Linear(channels // reduction, channels, bias=False),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        b, c, h, w = x.size()
+
+        # Squeeze
+        y = self.avg_pool(x).view(b, c)
+
+        # Excitation
+        y = self.fc(y).view(b, c, 1, 1)
+
+        # Scale
+        return x * y.expand_as(x)
+import torch
+import torch.nn as nn
+
+class ECA(nn.Module):
+    def __init__(self, channels, k_size=3):
+        super(ECA, self).__init__()
+
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+
+        self.conv = nn.Conv1d(
+            1, 1,
+            kernel_size=k_size,
+            padding=(k_size - 1) // 2,
+            bias=False
+        )
+
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+
+        y = self.avg_pool(x)
+
+        y = y.squeeze(-1).transpose(-1, -2)
+
+        y = self.conv(y)
+
+        y = y.transpose(-1, -2).unsqueeze(-1)
+
+        y = self.sigmoid(y)
+
+        return x * y.expand_as(x)
+
+class SRM(nn.Module):
+    def __init__(self, channels):
+        super(SRM, self).__init__()
+
+        self.cfc = nn.Conv1d(
+            channels,
+            channels,
+            kernel_size=2,
+            groups=channels,
+            bias=False
+        )
+
+        self.bn = nn.BatchNorm1d(channels)
+
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+
+        b, c, h, w = x.size()
+
+        x_view = x.view(b, c, -1)
+
+        mean = x_view.mean(-1)
+        std = x_view.std(-1)
+
+        style = torch.stack([mean, std], dim=2)
+
+        z = self.cfc(style)
+
+        z = self.bn(z)
+
+        g = self.sigmoid(z)
+
+        g = g.view(b, c, 1, 1)
+
+        return x * g
