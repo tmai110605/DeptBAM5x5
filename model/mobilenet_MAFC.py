@@ -20,13 +20,13 @@ class DepthwiseSeparableConvBlock(torch.nn.Module):
         self.use_res_skip = (in_channels == out_channels) and (stride == 1)
         self.conv_dw = conv3x3_dw_block(channels=in_channels, stride=stride)
         self.conv_pw = conv1x1_block(in_channels=in_channels, out_channels=out_channels)
-        self.cbamm = BAM(out_channels)
+        #self.cbamm = BAM(out_channels)
     def forward(self, x):
         if self.use_res_skip:
             residual = x
         x = self.conv_dw(x)
         x = self.conv_pw(x)
-        x = self.cbamm(x)
+        #x = self.cbamm(x)
         if self.use_res_skip:
             x = x + residual
         return x
