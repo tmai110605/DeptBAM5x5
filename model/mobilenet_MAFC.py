@@ -64,8 +64,8 @@ class LinearBottleneck(torch.nn.Module):
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
-        if self.use_se:
-            x = self.cbamm(x)
+        #if self.use_se:
+           # x = self.cbamm(x)
         if self.use_res_skip:
             x = x + residual
         return x
