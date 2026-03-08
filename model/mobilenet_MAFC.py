@@ -54,8 +54,8 @@ class LinearBottleneck(torch.nn.Module):
             self.conv2 = conv5x5_dw_block(channels=mid_channels, stride=stride, activation=activation)
         else:
             raise ValueError
-        #if self.use_se:
-           # self.cbamm = SE(out_channels)
+        if self.use_se:
+            self.cbamm = SE(out_channels)
         self.conv3 = conv1x1_block(in_channels=mid_channels, out_channels=out_channels, activation=None)
 
     def forward(self, x):
@@ -64,8 +64,8 @@ class LinearBottleneck(torch.nn.Module):
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
-        #if self.use_se:
-          #  x = self.cbamm(x)
+        if self.use_se:
+            x = self.cbamm(x)
         if self.use_res_skip:
             x = x + residual
         return x
