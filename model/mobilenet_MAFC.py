@@ -55,7 +55,7 @@ class LinearBottleneck(torch.nn.Module):
         else:
             raise ValueError
         if self.use_se:
-            self.cbamm = SRM(out_channels)
+            self.cbamm = ECA(out_channels)
         self.conv3 = conv1x1_block(in_channels=mid_channels, out_channels=out_channels, activation=None)
 
     def forward(self, x):
@@ -253,7 +253,7 @@ class MobileNetV3(torch.nn.Module):
         self.backbone.add_module("final_conv1", conv1x1_block(in_channels=in_channels, out_channels=final_conv_channels[0], activation="hswish"))
         in_channels = final_conv_channels[0]
         if final_conv_se:
-            self.backbone.add_module("final_se", SRM(in_channels))
+            self.backbone.add_module("final_se", ECA(in_channels))
         self.backbone.add_module("final_pool", torch.nn.AdaptiveAvgPool2d(output_size=1))
         if len(final_conv_channels) > 1:
             self.backbone.add_module("final_conv2", conv1x1_block(in_channels=in_channels, out_channels=final_conv_channels[1], activation="hswish", use_bn=False))
